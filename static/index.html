@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Explainable content-based movie recommendations powered by TF-IDF and cosine similarity." />
+<title>ReelMind | Movie Intelligence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+:root { --ink:#17222a; --muted:#68777a; --paper:#f5f3ee; --card:#fffdf8; --line:#d8ddd7; --teal:#0c7772; --teal-dark:#075450; --coral:#e36d50; --gold:#d5a743; }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; color:var(--ink); background:var(--paper); font-family:'DM Sans',sans-serif; background-image:radial-gradient(circle at 10% 8%,#fff9df 0,transparent 28%),linear-gradient(135deg,transparent 0 70%,#e8f0e8 100%); }
+.shell { max-width:1120px; margin:0 auto; padding:34px 28px 64px; }
+header { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:74px; }
+.brand { display:flex; align-items:center; gap:10px; font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.02em; }
+.brand-mark { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; color:#fff; background:var(--teal); font-size:17px; }
+.status { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; }
+.pulse { width:8px; height:8px; border-radius:50%; background:#45a86b; box-shadow:0 0 0 5px #dbeedd; }
+.hero { max-width:760px; animation:rise .6s ease-out both; }
+.eyebrow { color:var(--coral); font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+h1 { max-width:720px; margin:14px 0 16px; font-family:'Space Grotesk',sans-serif; font-size:clamp(2.5rem,6vw,5.2rem); line-height:.98; letter-spacing:-.06em; }
+.intro { max-width:600px; margin:0; color:var(--muted); font-size:17px; line-height:1.6; }
+.workspace { display:grid; grid-template-columns:1.2fr .8fr; gap:18px; margin-top:44px; }
+.search-panel,.stats-panel { border:1px solid var(--line); border-radius:16px; background:rgba(255,253,248,.86); box-shadow:0 14px 40px rgba(30,57,49,.06); }
+.search-panel { padding:22px; }
+label { display:block; margin-bottom:9px; font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+.search-row { display:flex; gap:10px; }
+select { min-width:0; flex:1; padding:14px 15px; border:1px solid #c7d0c9; border-radius:10px; color:var(--ink); background:#fff; font:inherit; }
+button { padding:14px 20px; border:0; border-radius:10px; color:#fff; background:var(--teal); font:inherit; font-weight:700; cursor:pointer; transition:transform .2s,background .2s; }
+button:hover { background:var(--teal-dark); transform:translateY(-1px); } button:disabled { cursor:wait; opacity:.6; transform:none; }
+.hint { margin:12px 0 0; color:var(--muted); font-size:12px; }
+.stats-panel { display:grid; grid-template-columns:1fr 1fr; gap:1px; overflow:hidden; background:var(--line); }
+.stat { padding:19px; background:rgba(255,253,248,.96); } .stat-value { display:block; margin-bottom:4px; font-family:'Space Grotesk',sans-serif; font-size:24px; font-weight:700; } .stat-label { color:var(--muted); font-size:12px; }
+#feedback { min-height:22px; margin-top:26px; } .error { color:#b44335; font-size:14px; }
+.results-heading { display:flex; justify-content:space-between; align-items:end; gap:16px; margin:30px 0 14px; } h2 { margin:0; font-family:'Space Grotesk',sans-serif; font-size:24px; letter-spacing:-.03em; } .result-count { color:var(--muted); font-size:13px; }
+#results { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.rec-card { padding:21px; border:1px solid var(--line); border-radius:14px; background:var(--card); animation:rise .45s ease-out both; } .rec-card:nth-child(2){animation-delay:.06s}.rec-card:nth-child(3){animation-delay:.12s}.rec-card:nth-child(4){animation-delay:.18s}.rec-card:nth-child(5){animation-delay:.24s}
+.rank { color:var(--coral); font-size:12px; font-weight:700; } .rec-title { margin:7px 0 4px; font-family:'Space Grotesk',sans-serif; font-size:20px; } .rec-genre { color:var(--teal); font-size:12px; font-weight:700; } .rec-desc { margin:13px 0 16px; color:var(--muted); font-size:13px; line-height:1.55; } .reason { color:var(--ink); font-size:12px; font-weight:600; }
+.score-row { display:flex; align-items:center; gap:10px; margin-top:13px; } .bar { height:6px; flex:1; overflow:hidden; border-radius:5px; background:#e5e9e3; } .bar-fill { height:100%; border-radius:inherit; background:var(--gold); } .score { color:var(--teal-dark); font-size:12px; font-weight:700; }
+.empty { grid-column:1/-1; padding:38px; border:1px dashed #bcc8bf; border-radius:14px; color:var(--muted); text-align:center; }
+.auth-shell { display:grid; grid-template-columns:1.05fr .95fr; min-height:100vh; max-width:1180px; margin:auto; padding:28px; align-items:center; gap:70px; }
+.auth-story { padding:24px 0; animation:rise .6s ease-out both; }
+.auth-story h1 { max-width:560px; margin:18px 0; font-size:clamp(3rem,6vw,5.7rem); }
+.story-note { max-width:460px; color:var(--muted); font-size:16px; line-height:1.65; }
+.signal-list { display:grid; gap:12px; max-width:390px; margin-top:36px; }
+.signal { display:flex; align-items:center; gap:12px; color:var(--ink); font-size:13px; font-weight:600; }
+.signal-icon { display:grid; place-items:center; width:27px; height:27px; border-radius:8px; color:#fff; background:var(--coral); }
+.auth-card { padding:30px; border:1px solid var(--line); border-radius:20px; background:rgba(255,253,248,.9); box-shadow:0 24px 60px rgba(30,57,49,.12); animation:rise .7s .08s ease-out both; }
+.auth-card h2 { margin:0 0 7px; font-size:28px; }
+.auth-sub { margin:0 0 26px; color:var(--muted); font-size:13px; line-height:1.5; }
+.auth-switch { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-bottom:22px; padding:4px; border-radius:10px; background:#e8ece6; }
+.auth-switch button { padding:10px; color:var(--muted); background:transparent; font-size:12px; }
+.auth-switch button.active { color:var(--ink); background:#fff; box-shadow:0 2px 8px rgba(30,57,49,.08); }
+.auth-label { margin-top:15px; }
+.auth-input { width:100%; padding:13px 14px; border:1px solid #c7d0c9; border-radius:10px; color:var(--ink); background:#fff; font:inherit; }
+.password-row { position:relative; } .password-row .auth-input { padding-right:70px; }
+.show-password { position:absolute; right:5px; top:5px; padding:8px 9px; color:var(--teal); background:transparent; font-size:11px; }
+.show-password:hover { background:#eef5ef; transform:none; }
+.auth-action { width:100%; margin-top:22px; }
+.auth-message { min-height:20px; margin:12px 0 0; color:#b44335; font-size:12px; line-height:1.4; }
+.demo-access { margin:20px 0 0; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:11px; line-height:1.55; }
+.demo-access strong { color:var(--ink); } .demo-button { padding:0; color:var(--teal); background:transparent; font-size:11px; } .demo-button:hover { background:transparent; transform:none; text-decoration:underline; }
+.account { display:flex; align-items:center; gap:10px; } .account-info { color:var(--muted); font-size:12px; text-align:right; } .account-name { display:block; color:var(--ink); font-weight:700; } .logout { padding:9px 12px; color:var(--teal); background:transparent; border:1px solid #b6c9bf; font-size:12px; } .logout:hover { color:#fff; background:var(--teal); }
+[hidden] { display:none !important; }
+@keyframes rise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@media (max-width:700px) { .auth-shell{grid-template-columns:1fr; padding:20px 18px; gap:20px}.auth-story{padding:12px 0 0}.auth-story h1{font-size:3.4rem}.signal-list{margin-top:22px}.auth-card{padding:24px 20px}.shell{padding:24px 18px 48px}header{margin-bottom:52px}.workspace,#results{grid-template-columns:1fr}.search-row{flex-direction:column}button{width:100%}h1{font-size:3.3rem}.account-info{display:none}.logout{width:auto} }
+</style>
+</head>
+<body>
+<section id="authShell" class="auth-shell">
+	<div class="auth-story"><div class="brand"><span class="brand-mark">R</span><span>ReelMind</span></div><div class="eyebrow" style="margin-top:72px">Your personal watch intelligence</div><h1>Stories worth your time.</h1><p class="story-note">A private space for discovering films that match your taste. Sign in to turn the ReelMind engine loose on 48 hand-curated titles.</p><div class="signal-list"><div class="signal"><span class="signal-icon">✦</span>Explainable AI recommendations</div><div class="signal"><span class="signal-icon">◌</span>Personal session, no ratings required</div><div class="signal"><span class="signal-icon">↗</span>Fast, thoughtful discovery</div></div></div>
+	<div class="auth-card"><h2 id="authTitle">Welcome back</h2><p id="authSub" class="auth-sub">Sign in to continue your cinematic exploration.</p><div class="auth-switch"><button id="loginMode" class="active" type="button">Sign in</button><button id="registerMode" type="button">Create access</button></div><form id="authForm"><div id="nameField" hidden><label class="auth-label" for="nameInput">Your name</label><input class="auth-input" id="nameInput" autocomplete="name" placeholder="How should we call you?" /></div><label class="auth-label" for="identifierInput">Continue with</label><input class="auth-input" id="identifierInput" autocomplete="username" placeholder="you@gmail.com" required /><label class="auth-label" for="passwordInput">Password</label><div class="password-row"><input class="auth-input" id="passwordInput" type="password" autocomplete="current-password" placeholder="At least 8 characters" required /><button class="show-password" id="showPassword" type="button">Show</button></div><button class="auth-action" id="authAction" type="submit">Enter ReelMind</button><p id="authMessage" class="auth-message" role="alert"></p></form><p class="demo-access"><strong>Quick demo access</strong><br />demo@reelmind.ai · ReelMind123! <button class="demo-button" id="demoButton" type="button">Use demo account</button></p></div>
+</section>
+<main id="appShell" class="shell" hidden>
+<header><div class="brand"><span class="brand-mark">R</span><span>ReelMind</span></div><div class="account"><div class="account-info"><span class="account-name" id="accountName"></span><span id="accountIdentifier"></span></div><button class="logout" id="logoutButton" type="button">Sign out</button></div></header>
+<section class="hero"><div class="eyebrow">Personalized discovery engine</div><h1>Find your next great watch.</h1><p class="intro">Choose a movie and let the model surface titles with the closest story DNA, genre signals, and plot language.</p></section>
+<section class="workspace" aria-label="Recommendation controls"><div class="search-panel"><label for="movieSelect">Starting point</label><div class="search-row"><select id="movieSelect" aria-label="Choose a movie"></select><button id="btn" type="button">Recommend</button></div><p class="hint">Powered by content-based filtering. No ratings or personal data required.</p></div><div id="stats" class="stats-panel" aria-label="Model insights"></div></section>
+<div id="feedback" role="status" aria-live="polite"></div>
+<section aria-labelledby="results-title"><div class="results-heading"><h2 id="results-title">Your shortlist</h2><span id="resultCount" class="result-count"></span></div><div id="results"><div class="empty">Choose a title to generate your first shortlist.</div></div></section>
+</main>
+<script>
+const authShell=document.getElementById('authShell'),appShell=document.getElementById('appShell'),authForm=document.getElementById('authForm'),authTitle=document.getElementById('authTitle'),authSub=document.getElementById('authSub'),authAction=document.getElementById('authAction'),authMessage=document.getElementById('authMessage'),loginMode=document.getElementById('loginMode'),registerMode=document.getElementById('registerMode'),nameField=document.getElementById('nameField'),identifierInput=document.getElementById('identifierInput'),passwordInput=document.getElementById('passwordInput'),nameInput=document.getElementById('nameInput');
+let isRegistering=false;
+function showAuthMessage(message){authMessage.textContent=message;}
+function setAuthMode(registering){isRegistering=registering;loginMode.classList.toggle('active',!registering);registerMode.classList.toggle('active',registering);nameField.hidden=!registering;authTitle.textContent=registering?'Create your access':'Welcome back';authSub.textContent=registering?'Build a private space for smarter movie discovery.':'Sign in to continue your cinematic exploration.';authAction.textContent=registering?'Create account':'Enter ReelMind';passwordInput.autocomplete=registering?'new-password':'current-password';showAuthMessage('');}
+function identifierType(){return identifierInput.value.includes('@')?'email':'phone';}
+function showApp(user){document.getElementById('accountName').textContent=user.name;document.getElementById('accountIdentifier').textContent=user.identifier;authShell.hidden=true;appShell.hidden=false;loadCatalog().catch(error=>{feedback.textContent=error.message;feedback.className='error';});}
+async function boot(){try{const response=await fetch('/auth/me');if(response.ok){showApp(await response.json());}}catch(error){showAuthMessage('The sign-in service is unavailable right now.');}}
+loginMode.addEventListener('click',()=>setAuthMode(false));registerMode.addEventListener('click',()=>setAuthMode(true));
+document.getElementById('showPassword').addEventListener('click',event=>{passwordInput.type=passwordInput.type==='password'?'text':'password';event.target.textContent=passwordInput.type==='password'?'Show':'Hide';});
+document.getElementById('demoButton').addEventListener('click',()=>{setAuthMode(false);identifierInput.value='demo@reelmind.ai';passwordInput.value='ReelMind123!';});
+authForm.addEventListener('submit',async event=>{event.preventDefault();authAction.disabled=true;authAction.textContent=isRegistering?'Creating...':'Signing in...';showAuthMessage('');const payload={identifier:identifierInput.value,password:passwordInput.value,login_type:identifierType()};if(isRegistering)payload.name=nameInput.value;try{const response=await fetch(isRegistering?'/auth/register':'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.detail||'Unable to authenticate.');showApp(data.user);}catch(error){showAuthMessage(error.message);}finally{authAction.disabled=false;authAction.textContent=isRegistering?'Create account':'Enter ReelMind';}});
+document.getElementById('logoutButton').addEventListener('click',async()=>{await fetch('/auth/logout',{method:'POST'});appShell.hidden=true;authShell.hidden=false;authForm.reset();setAuthMode(false);});
+const movieSelect=document.getElementById('movieSelect'),button=document.getElementById('btn'),results=document.getElementById('results'),feedback=document.getElementById('feedback'),resultCount=document.getElementById('resultCount');
+function escapeHtml(value){return String(value).replace(/[&<>\'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));}
+async function loadCatalog(){const [moviesResponse,insightsResponse]=await Promise.all([fetch('/movies'),fetch('/insights')]);if(!moviesResponse.ok||!insightsResponse.ok)throw new Error('Unable to load the movie catalog.');const movies=await moviesResponse.json(),insights=await insightsResponse.json();movieSelect.innerHTML=movies.titles.map(title=>`<option value="${escapeHtml(title)}">${escapeHtml(title)}</option>`).join('');document.getElementById('stats').innerHTML=`<div class="stat"><span class="stat-value">${insights.movie_count}</span><span class="stat-label">Movies indexed</span></div><div class="stat"><span class="stat-value">${insights.genre_count}+</span><span class="stat-label">Genre signals</span></div><div class="stat"><span class="stat-value">TF-IDF</span><span class="stat-label">Feature model</span></div><div class="stat"><span class="stat-value">3x</span><span class="stat-label">Genre weighting</span></div>`;}
+async function getRecommendations(){const title=movieSelect.value;button.disabled=true;button.textContent='Thinking...';feedback.textContent='';feedback.className='';try{const response=await fetch(`/recommend?title=${encodeURIComponent(title)}&top_n=6`),data=await response.json();if(!response.ok)throw new Error(data.detail||'Recommendation request failed.');resultCount.textContent=`${data.recommendations.length} matches for ${data.query}`;results.innerHTML=data.recommendations.map((movie,index)=>{const percent=Math.max(0,Math.min(100,movie.similarity*100));return `<article class="rec-card"><div class="rank">0${index+1} / RECOMMENDED</div><div class="rec-title">${escapeHtml(movie.title)}</div><div class="rec-genre">${escapeHtml(movie.genres)}</div><p class="rec-desc">${escapeHtml(movie.description)}</p><div class="reason">${escapeHtml(movie.reason)}</div><div class="score-row"><div class="bar"><div class="bar-fill" style="width:${percent}%"></div></div><span class="score">${percent.toFixed(1)}%</span></div></article>`;}).join('');}catch(error){feedback.textContent=error.message;feedback.className='error';}finally{button.disabled=false;button.textContent='Recommend';}}
+button.addEventListener('click',getRecommendations);boot();
+</script>
+</body>
+</html>
